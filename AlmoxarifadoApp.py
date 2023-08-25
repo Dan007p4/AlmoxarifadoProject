@@ -161,7 +161,7 @@ if(st.session_state.Login2 == 1):
             menu_icon="border-width"
         )
     st.sidebar.image(
-        "WhatsApp_Image_2023-02-21_at_14.22.25-removebg-preview.jpeg", use_column_width=True)
+        "WhatsApp_Image_2023-02-21_at_14.22.25-removebg-preview.jpg", use_column_width=True)
 
     if selected == "Registros do almoxarifado":
         logout = st.button("Logout")
