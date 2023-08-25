@@ -23,8 +23,8 @@ st.set_page_config(page_icon="🏥", page_title="Gerenciador de dados")
 
 connection = mysql.connector.connect(
     host="aws.connect.psdb.cloud",
-    user="zq2kdrth4vfoa6f89w4p",
-    passwd="pscale_pw_K5rSvAuo70zcB28gw42DoAdBLSy86nSLixeGFn5HTOy",
+    user=st.secrets["db_username"],
+    passwd=st.secrets["db_password"],
 
     db="database",
     ssl_ca="cacert-2023-01-10.pem"
