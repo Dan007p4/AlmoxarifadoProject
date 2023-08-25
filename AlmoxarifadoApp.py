@@ -69,7 +69,7 @@ if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
     cookie = "ActualUser"
     st.title("Login")
 
-    user = st.text_input("Usuario")
+    user = st.text_input("Usuário")
     password = st.text_input("Senha", type="password")
     css = '''
             <style>
@@ -826,6 +826,6 @@ elif(st.session_state.Login2 == 2):
 
 
 elif st.session_state.Login2 == 3:
-    st.error('Senha ou Usuario esta incorreto')
+    st.error('Senha ou Usuário esta incorreto')
 elif st.session_state.Login2 == 0:
-    st.warning('Insira respectivamente o usuario e a senha como solicitado')
+    st.warning('Insira respectivamente o usuário e a senha como solicitado')
