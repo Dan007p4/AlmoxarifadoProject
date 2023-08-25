@@ -18,7 +18,7 @@ import time
 import extra_streamlit_components as stx
 from fpdf import FPDF
 from streamlit_cookies_manager import EncryptedCookieManager
-st.set_page_config(page_icon="🏥", page_title="Gerenciador de dados")
+st.set_page_config(page_icon="🗃", page_title="Gerenciador Almoxarifado")
 ##FAZENDO CONEXÃO COM O DB##
 
 connection = mysql.connector.connect(
@@ -82,14 +82,14 @@ if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
     butt = st.button("Login")
     if butt:
 
-        if((user == "dan") & (password == "sss")):
+        if((user == "AdmAlmoxarifado") & (password == "Estoque@2023")):
             st.session_state.Login2 = 1
             cookie_manager.set(cookie, "1", expires_at=datetime.datetime(
                 year=2024, month=2, day=2))
             time.sleep(1000)
             st.experimental_rerun()
 
-        elif((user == "bi") & (password == "ggg")):
+        elif((user == "UsuarioAlmoxarifado") & (password == "Modelo@2023")):
             st.session_state.Login2 = 2
             cookie_manager.set(cookie, "2", expires_at=datetime.datetime(
                 year=2024, month=2, day=2))
@@ -161,7 +161,7 @@ if(st.session_state.Login2 == 1):
             menu_icon="border-width"
         )
     st.sidebar.image(
-        "WhatsApp Image 2023-02-21 at 14.22.25 (1).png", use_column_width=True)
+        "WhatsApp_Image_2023-02-21_at_14.22.25-removebg-preview", use_column_width=True)
 
     if selected == "Registros do almoxarifado":
         logout = st.button("Logout")
@@ -407,7 +407,7 @@ elif(st.session_state.Login2 == 2):
             menu_icon="border-width"
         )
     st.sidebar.image(
-        "WhatsApp Image 2023-02-21 at 14.22.25 (1).png", use_column_width=True)
+        "WhatsApp_Image_2023-02-21_at_14.22.25-removebg-preview.jpg", use_column_width=True)
 
     if selected == "Gerenciar almoxarifado":
         logout = st.button("Logout")
@@ -549,20 +549,52 @@ elif(st.session_state.Login2 == 2):
             data["ID_PRODUTO"] = data["ID_PRODUTO"].replace(
                 AllProducts_Dictionaty)
             st.dataframe(data)
-            # st.divider()
-            # st.write(text_indate)
-            # pdf = FPDF()
-            # pdf.add_page()
-            # pdf.set_font("Arial", size=12)
-            # pdf.cell(200, 10, txt=text_indate, ln=1, align="C")
-            # pdf.output("example.pdf")
+            st.divider()
 
-            # with open("example.pdf", "rb") as f:
-            #     st.download_button(
-            #         label="Fazer dowload do relatorio em PDF",
-            #         data=f,
-            #         file_name='teste.pdf'
-            #     )
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", size=12)
+
+            text = "ITENS VENCIDOS:\n"
+            pdf.cell(200, 10, txt=text, ln=1, align="C")
+            pdf.ln(2)
+            for i in range(0, len(list_Name_Expire)):
+                newText = "\n-- "+str(ExpireListValue[i]) + \
+                    " "+str(list_Name_Expire[i]) + " VENCIDOS EM " + \
+                    str(list_Expire_date[0]) + "\n"
+
+                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                pdf.ln(2)
+
+            text_soon = "ITENS PRÓXIMOS DO VENCIMENTO:\n"
+            pdf.cell(200, 10, txt=text_soon, ln=1, align="C")
+            pdf.ln(2)
+            for i in range(0, len(list_Name_Soon)):
+                newText = "\n-- " + str(dataSoonValue[i]) + \
+                    " " + str(list_Name_Soon[i]) + " PRÓXIMOS DO VENCIMENTO EM " + \
+                    str(list_Soon_date[i]) + "\n"
+                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                pdf.ln(2)
+
+            text_indate = "ITENS DENTRO DO PRAZO:\n"
+            pdf.cell(200, 10, txt=text_indate, ln=1, align="C")
+            pdf.ln(2)
+            for i in range(0, len(list_Name_Indate)):
+                newText = "\n-- " + str(dataIndateValue[i]) + \
+                    " " + str(list_Name_Indate[i]) + " DENTRO DO PRAZO COM VENCIMENTO EM " + \
+                    str(list_Indate_date[i]) + "\n"
+
+                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                pdf.ln(2)
+
+            pdf.output("example.pdf")
+
+            with open("example.pdf", "rb") as f:
+                st.download_button(
+                    label="Fazer dowload do relatorio em PDF",
+                    data=f,
+                    file_name='teste.pdf'
+                )
         else:
 
             c.execute(
@@ -682,20 +714,52 @@ elif(st.session_state.Login2 == 2):
             data["ID_PRODUTO"] = data["ID_PRODUTO"].replace(
                 AllProducts_Dictionaty)
             st.dataframe(data)
-            # st.divider()
-            # st.write(text_indate)
-            # pdf = FPDF()
-            # pdf.add_page()
-            # pdf.set_font("Arial", size=12)
-            # pdf.cell(200, 10, txt=text_indate, ln=1, align="C")
-            # pdf.output("example.pdf")
+            st.divider()
 
-            # with open("example.pdf", "rb") as f:
-            #     st.download_button(
-            #         label="Fazer dowload do relatorio em PDF",
-            #         data=f,
-            #         file_name='teste.pdf'
-            #     )
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", size=12)
+
+            text = "ITENS VENCIDOS:\n"
+            pdf.cell(200, 10, txt=text, ln=1, align="C")
+            pdf.ln(2)
+            for i in range(0, len(list_Name_Expire)):
+                newText = "\n-- "+str(ExpireListValue[i]) + \
+                    " "+str(list_Name_Expire[i]) + " VENCIDOS EM " + \
+                    str(list_Expire_date[0]) + "\n"
+
+                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                pdf.ln(2)
+
+            text_soon = "ITENS PRÓXIMOS DO VENCIMENTO:\n"
+            pdf.cell(200, 10, txt=text_soon, ln=1, align="C")
+            pdf.ln(2)
+            for i in range(0, len(list_Name_Soon)):
+                newText = "\n-- " + str(dataSoonValue[i]) + \
+                    " " + str(list_Name_Soon[i]) + " PRÓXIMOS DO VENCIMENTO EM " + \
+                    str(list_Soon_date[i]) + "\n"
+                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                pdf.ln(2)
+
+            text_indate = "ITENS DENTRO DO PRAZO:\n"
+            pdf.cell(200, 10, txt=text_indate, ln=1, align="C")
+            pdf.ln(2)
+            for i in range(0, len(list_Name_Indate)):
+                newText = "\n-- " + str(dataIndateValue[i]) + \
+                    " " + str(list_Name_Indate[i]) + " DENTRO DO PRAZO COM VENCIMENTO EM " + \
+                    str(list_Indate_date[i]) + "\n"
+
+                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                pdf.ln(2)
+
+            pdf.output("example.pdf")
+
+            with open("example.pdf", "rb") as f:
+                st.download_button(
+                    label="Fazer dowload do relatorio em PDF",
+                    data=f,
+                    file_name='teste.pdf'
+                )
 
     if selected == "Adicionar e remover produtos":
         logout = st.button("Logout")
@@ -735,16 +799,6 @@ elif(st.session_state.Login2 == 2):
                 st.experimental_rerun()
             st.title("Adicionar produto")
 
-            # c.execute(
-            #     "SELECT MODELO_NOME FROM TABELA_ALMOXARIFADO_PRODUTOS;")
-            # list_tables = []
-            # tablesModelName = c.fetchall()
-            # for i in tablesModelName:
-            #     value = i[0]
-            #     list_tables.append(value)
-
-            # model = st.selectbox("Selecione o modelo do pedido",
-            #                      list_tables)
             name = st.text_input("Digite o nome do item")
             result = NotSymbols(name)
             desc = st.selectbox("Selecione a descrição do item", [
