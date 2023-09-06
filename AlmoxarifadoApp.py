@@ -83,7 +83,7 @@ if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
     butt = st.button("Login")
     if butt:
 
-        if((user == "db_user_name") & (password == "db_user_password")):
+        if((user == st.secrets["db_user_name"]) & (password == st.secrets["db_user_password"])):
             st.session_state.Login2 = 1
             cookie_manager.set(cookie, "1", expires_at=datetime.datetime(
                 year=2024, month=2, day=2))
