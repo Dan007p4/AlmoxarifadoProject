@@ -15,6 +15,7 @@ import datetime as dt
 from datetime import datetime, timedelta
 import datetime
 import time
+import calendar
 import extra_streamlit_components as stx
 from fpdf import FPDF
 from streamlit_cookies_manager import EncryptedCookieManager
@@ -69,7 +70,7 @@ if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
     cookie = "ActualUser"
     st.title("Login")
 
-    user = st.text_input("Usuário")
+    user = st.text_input("Usuario")
     password = st.text_input("Senha", type="password")
     css = '''
             <style>
@@ -82,14 +83,14 @@ if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
     butt = st.button("Login")
     if butt:
 
-        if((user == "AdmAlmoxarifado") & (password == "Estoque@2023")):
+        if((user == "db_user_name") & (password == "db_user_password")):
             st.session_state.Login2 = 1
             cookie_manager.set(cookie, "1", expires_at=datetime.datetime(
                 year=2024, month=2, day=2))
             time.sleep(1000)
             st.experimental_rerun()
 
-        elif((user == "UsuarioAlmoxarifado") & (password == "Modelo@2023")):
+        elif((user == st.secrets["db_adm_name"]) & (password == st.secrets["db_adm_password"])):
             st.session_state.Login2 = 2
             cookie_manager.set(cookie, "2", expires_at=datetime.datetime(
                 year=2024, month=2, day=2))
@@ -152,6 +153,22 @@ def verificar_formato_data(data_string):
     return True
 
 
+meses_dict = {
+    "JANEIRO": "01",
+    "FEVEREIRO": "02",
+    "MARÇO": "03",
+    "ABRIL": "04",
+    "MAIO": "05",
+    "JUNHO": "06",
+    "JULHO": "07",
+    "AGOSTO": "08",
+    "SETEMBRO": "09",
+    "OUTUBRO": "10",
+    "NOVEMBRO": "11",
+    "DEZEMBRO": "12"
+}
+
+
 if(st.session_state.Login2 == 1):
     with st.sidebar:
 
@@ -202,11 +219,14 @@ if(st.session_state.Login2 == 1):
                                   max_value=50000, min_value=1, value=1, step=1)
 
             dtRecive = st.text_input(
-                "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 2023-05-20", max_chars=10)
+                "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20-05-2023", max_chars=10)
             NotSymbolsDate(dtRecive)
+            dtRecive = dtRecive[6:11]+dtRecive[2:7]+dtRecive[0:1]
+
             dtExpire = st.text_input(
-                "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 2023-05-20", max_chars=10)
-            NotSymbolsDate(dtRecive)
+                "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20-05-2023", max_chars=10)
+            NotSymbolsDate(dtExpire)
+            dtExpire = dtExpire[6:11]+dtExpire[2:7]+dtExpire[0:1]
 
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
                 st.warning("Data de recebimento ou de vencimento incorreta")
@@ -403,13 +423,252 @@ elif(st.session_state.Login2 == 2):
 
         selected = option_menu(
             menu_title="Menu",
-            options=["Gerenciar almoxarifado", "Adicionar e remover produtos"],
+            options=["Gerenciar almoxarifado",
+                     "Adicionar e remover produtos", "Registros do almoxarifado"],
             menu_icon="border-width"
         )
     st.sidebar.image(
         "WhatsApp_Image_2023-02-21_at_14.22.25-removebg-preview.jpg", use_column_width=True)
 
+    if selected == "Registros do almoxarifado":
+        logout = st.button("Logout")
+        st.divider()
+        if(logout):
+            LogOut()
+
+            st.experimental_rerun()
+
+        if(st.session_state.new_form_menu == 1):
+            menu = st.button("Retornar menu")
+            if menu:
+                st.session_state.new_form_menu = 0
+                st.experimental_rerun()
+
+            css = '''
+                    <style>
+                    [class="css-1li7dat effi0qh1"]{visibility: hidden;}
+
+                    </style>
+                    '''
+
+            st.markdown(css, unsafe_allow_html=True)
+            st.title("Insira os valores para o registro no almoxarifado")
+            c.execute(
+                "SELECT MODELO_NOME FROM TABELA_ALMOXARIFADO_PRODUTOS;")
+
+            list_tables = []
+            tablesModelName = c.fetchall()
+            for i in tablesModelName:
+                value = i[0]
+                list_tables.append(value)
+
+            model = st.selectbox("Selecione o modelo do pedido",
+                                 list_tables)
+
+            val = st.number_input("Digite o valor que vai entrar",
+                                  max_value=50000, min_value=1, value=1, step=1)
+
+            dtRecive = st.text_input(
+                "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20-05-2023", max_chars=10)
+            NotSymbolsDate(dtRecive)
+            dtRecive = dtRecive[6:11]+dtRecive[2:7]+dtRecive[0:1]
+
+            dtExpire = st.text_input(
+                "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20-05-2023", max_chars=10)
+            NotSymbolsDate(dtExpire)
+            dtExpire = dtExpire[6:11]+dtExpire[2:7]+dtExpire[0:1]
+
+            if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
+                st.warning("Data de recebimento ou de vencimento incorreta")
+
+            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)):
+                send = st.button("Enviar")
+                if send:
+                    c.execute(
+                        "SELECT ID_ITEM FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = '" + model+"';")
+                    st.write("Lançamento concluído")
+
+                    list_ID = []
+                    tablesID = c.fetchall()
+                    for i in tablesID:
+                        value = i[0]
+                        list_ID.append(value)
+                    # st.text("INSERT INTO TABELA_ALMOXARIFADO_TRANSACOES( DATA_TRANSACAO, DATA_VENCIMENTO,VALOR,ID_PRODUTO) VALUES (STR_TO_DATE('" +
+                    #         dtRecive+"','%Y-%m-%d'),STR_TO_DATE('"+dtExpire+"','%Y-%m-%d'),'"+str(val)+"','" + str(list_ID[0])+"');")
+
+                    c.execute("INSERT INTO TABELA_ALMOXARIFADO_TRANSACOES( DATA_TRANSACAO, DATA_VENCIMENTO,VALOR,ID_PRODUTO) VALUES (STR_TO_DATE('" +
+                              dtRecive+"','%Y-%m-%d'),STR_TO_DATE('"+dtExpire+"','%Y-%m-%d'),'"+str(val)+"','" + str(list_ID[0])+"');")
+
+                    connection.commit()
+
+                    # st.text("SELECT ID_TRANSACAO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = " +
+                    #         str(list_ID[0])+"AND DATA_VENCIMENTO ='"+dtExpire+"';")
+                    c.execute(
+                        "SELECT ID_TRANSACAO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = " + str(list_ID[0])+" AND DATA_VENCIMENTO ='"+dtExpire+"';")
+
+                    list_trans = []
+                    tablesTransacao = c.fetchall()
+                    for i in tablesTransacao:
+                        value = i[0]
+                        list_trans.append(value)
+
+                    if len(list_trans) <= 1:
+
+                        c.execute("INSERT INTO TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS(SALDO_PEDIDO,VENCIMENTO_PEDIDO,ID_TRANSACAO,ID_PRODUTO_PEDIDO) VALUES ('" +
+                                  str(val) + "',STR_TO_DATE('"+dtExpire+"','%Y-%m-%d'),'"+str(list_trans[0])+"','" + str(list_ID[0])+"');")
+
+                        connection.commit()
+
+                        c.execute(
+                            "SELECT ID_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = " + str(list_ID[0])+" AND VENCIMENTO_PEDIDO = '"+dtExpire+"';")
+                        list_val = []
+                        tablesValue = c.fetchall()
+                        for i in tablesValue:
+                            value = i[0]
+                            list_val.append(value)
+
+                    else:
+                        c.execute(
+                            "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = " + str(list_ID[0])+" AND VENCIMENTO_PEDIDO = '"+dtExpire+"';")
+                        list_val = []
+                        tablesValue = c.fetchall()
+                        for i in tablesValue:
+                            value = i[0]
+                            list_val.append(value)
+                        addvalue = list_val[0] + val
+                        # st.write(list_val[0])
+                        # st.write(val)
+                        # st.write(addvalue)
+                        c.execute("UPDATE TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS  SET SALDO_PEDIDO = " +
+                                  str(addvalue) + " WHERE  ID_PRODUTO_PEDIDO  = '" + str(list_ID[0])+"' AND VENCIMENTO_PEDIDO = '"+dtExpire+"';")
+                        connection.commit()
+
+        elif(st.session_state.new_form_menu == 2):
+            menu = st.button("Retornar menu")
+            if menu:
+                st.session_state.new_form_menu = 0
+                st.experimental_rerun()
+
+            css = '''
+                    <style>
+                    [class="css-1li7dat effi0qh1"]{visibility: hidden;}
+
+                    </style>
+                    '''
+
+            st.markdown(css, unsafe_allow_html=True)
+            st.title("Selecione o item para dar baixa")
+
+            c.execute(
+                "SELECT MODELO_NOME FROM TABELA_ALMOXARIFADO_PRODUTOS;")
+
+            list_tables = []
+            tables = c.fetchall()
+            for i in tables:
+                value = i[0]
+                list_tables.append(value)
+
+            model = st.selectbox("Selecione o modelo do pedido",
+                                 list_tables)
+            # st.text(
+            #     "SELECT ITEM_ID FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='"+model + "';")
+            c.execute(
+                "SELECT ID_ITEM FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='"+model + "';")
+
+            list_ID = []
+            tables = c.fetchall()
+            for i in tables:
+                value = i[0]
+                list_ID.append(value)
+
+            # st.text(
+            #     "SELECT VENCIEMENTO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO ='"+str(list_ID[0])+"';")
+            c.execute(
+                "SELECT VENCIMENTO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO ='"+str(list_ID[0])+"';")
+
+            list_Expire = []
+            tables_expire = c.fetchall()
+            for i in tables_expire:
+                value = i[0].date()
+                list_Expire.append(value)
+
+            dtExpire = st.selectbox(
+                "Selecione a data de vencimento", list_Expire)
+
+            c.execute(
+                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+            list_val = []
+            tablesValue = c.fetchall()
+            for i in tablesValue:
+                value = i[0]
+                list_val.append(value)
+
+            val = st.number_input("Digite o valor a ser debitado",
+                                  max_value=5000, min_value=1, value=1, step=1)
+
+            if(val > list_val[0]):
+                st.error(
+                    "Valor a ser debitado é maior que todo o estoque existente do produto")
+
+            if((val > 0) & (val != None) & (val < list_val[0])):
+
+                send = st.button("Enviar")
+                if send:
+                    # st.text(
+                    #     "SELECT VALOR FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = " + model+";")
+                    c.execute(
+                        "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+                    list_val = []
+                    tablesValue = c.fetchall()
+                    for i in tablesValue:
+                        value = i[0]
+                        list_val.append(value)
+
+                    c.execute(
+                        "SELECT DATA_VENCIMENTO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = '" + str(list_ID[0])+"';")
+                    list_Expire = []
+                    tablesExpire = c.fetchall()
+                    for i in tablesExpire:
+                        value = i[0].date()
+                        list_Expire.append(value)
+
+                    c.execute(
+                        "SELECT DATA_TRANSACAO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO= '" + str(list_ID[0])+"';")
+                    list_Recive = []
+                    tablesRecive = c.fetchall()
+                    for i in tablesRecive:
+                        value = i[0].date()
+                        list_Recive.append(value)
+
+                    c.execute("INSERT INTO TABELA_ALMOXARIFADO_TRANSACOES( DATA_TRANSACAO, DATA_VENCIMENTO,VALOR,ID_PRODUTO) VALUES (STR_TO_DATE('" +
+                              str(list_Recive[0])+"','%Y-%m-%d'),STR_TO_DATE('"+str(dtExpire)+"','%Y-%m-%d'),'"+str(-val)+"','" + str(list_ID[0])+"');")
+
+                    c.execute("UPDATE TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS SET SALDO_PEDIDO = " +
+                              str(list_val[0] - val) + " WHERE  ID_PRODUTO_PEDIDO = '" + str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+
+                    connection.commit()
+
+                    c.execute(
+                        "SELECT VENCIMENTO_PEDIDO,ID_PRODUTO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE SALDO_PEDIDO = '" + str(0)+"';")
+                    tables0 = c.fetchall()
+                    for i in tables0:
+                        c.execute(
+                            "DELETE FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE VENCIMENTO_PEDIDO = '" + str(tables0[0])+"' AND ID_PRODUTO_PEDIDO ='"+str(tables0[1]) + "';")
+                        connection.commit()
+                    st.write("Baixa concluída")
+
+        else:
+            lanca = st.button("Lançar no almoxarifado")
+            baixa = st.button("Dar baixa no almoxarifado")
+            if lanca:
+                st.session_state.new_form_menu = 1
+                st.experimental_rerun()
+            if baixa:
+                st.session_state.new_form_menu = 2
+                st.experimental_rerun()
+
     if selected == "Gerenciar almoxarifado":
+
         logout = st.button("Logout")
         if(logout):
             LogOut()
@@ -472,7 +731,8 @@ elif(st.session_state.Login2 == 2):
             for i in range(0, len(list_Name_Expire)):
                 newText = "\n:red[● **"+str(ExpireListValue[i]) + \
                     " "+str(list_Name_Expire[i]) + " VENCIDOS EM " + \
-                    str(list_Expire_date[0]) + "**]\n"
+                    str(list_Expire_date[0][8:10]+list_Expire_date[0][4:8] +
+                        list_Expire_date[0][0:4]) + "**]\n"
 
                 text = text + newText
 
@@ -500,7 +760,8 @@ elif(st.session_state.Login2 == 2):
             for i in range(0, len(list_Name_Soon)):
                 newText = "\n:orange[● **" + str(dataSoonValue[i]) + \
                     " " + str(list_Name_Soon[i]) + " PRÓXIMOS DO VENCIMENTO EM " + \
-                    str(list_Soon_date[i]) + "**]\n"
+                    str(list_Soon_date[i][8:10]+list_Soon_date[i]
+                        [4:8]+list_Soon_date[i][0:4]) + "**]\n"
 
                 text_soon = text_soon + newText
 
@@ -528,73 +789,150 @@ elif(st.session_state.Login2 == 2):
             for i in range(0, len(list_Name_Indate)):
                 newText = "\n:green[● **" + str(dataIndateValue[i]) + \
                     " " + str(list_Name_Indate[i]) + " DENTRO DO PRAZO COM VENCIMENTO EM " + \
-                    str(list_Indate_date[i]) + "**]\n"
+                    str(list_Indate_date[i][8:10]+list_Indate_date[i]
+                        [4:8]+list_Indate_date[i][0:4]) + "**]\n"
 
                 text_indate = text_indate + newText
 
             st.subheader(text_indate)
             st.divider()
             st.subheader("Lista de transações")
-            data = pd.read_sql(
-                "SELECT * FROM TABELA_ALMOXARIFADO_TRANSACOES", con=connection)
+            filtro = st.radio("Filtro", ["Data", "Nenhum"])
+            if filtro == "Data":
+                mes = st.selectbox("Selecione o mês minimo", [
+                    "JANEIRO",
+                    "FEVEREIRO",
+                    "MARÇO",
+                    "ABRIL",
+                    "MAIO",
+                    "JUNHO",
+                    "JULHO",
+                    "AGOSTO",
+                    "SETEMBRO",
+                    "OUTUBRO",
+                    "NOVEMBRO",
+                    "DEZEMBRO"])
+                anos = []
+                anos.append(dt.date.today().year)
+                if dt.date.today().year > 2023:
+                    num_anos = dt.date.today().year - 2023
+                    for i in range(num_anos):
+                        days = float(365*(i+1))
+                        previous_year = dt.date.today() - timedelta(days=float(days))
+                        anos.append(previous_year.year)
 
-            c.execute(
-                "SELECT * FROM TABELA_ALMOXARIFADO_PRODUTOS ;")
-            AllProducts = c.fetchall()
-            AllProducts_Dictionaty = {}
-            for i in range(len(AllProducts)):
-                AllProducts_Dictionaty[AllProducts[i][0]] = str(
-                    AllProducts[i][1])
-            # data["ID_PRODUTO"] = data["ID_PRODUTO"].to_string()
-            data["ID_PRODUTO"] = data["ID_PRODUTO"].replace(
-                AllProducts_Dictionaty)
-            st.dataframe(data)
-            st.divider()
+                ano = st.selectbox("Selecione o ano minimo", anos)
+                dias = []
+                for i in range(calendar.monthrange(int(ano), int(meses_dict[mes]))[1]):
+                    dias.append(i+1)
+                dia = st.selectbox("Selecione o dia minimo", dias)
 
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
+                mes2 = st.selectbox("Selecione o mês maximo", [
+                    "JANEIRO",
+                    "FEVEREIRO",
+                    "MARÇO",
+                    "ABRIL",
+                    "MAIO",
+                    "JUNHO",
+                    "JULHO",
+                    "AGOSTO",
+                    "SETEMBRO",
+                    "OUTUBRO",
+                    "NOVEMBRO",
+                    "DEZEMBRO"])
+                ano2 = st.selectbox("Selecione o ano maximo", anos)
 
-            text = "ITENS VENCIDOS:\n"
-            pdf.cell(200, 10, txt=text, ln=1, align="C")
-            pdf.ln(2)
-            for i in range(0, len(list_Name_Expire)):
-                newText = "\n-- "+str(ExpireListValue[i]) + \
-                    " "+str(list_Name_Expire[i]) + " VENCIDOS EM " + \
-                    str(list_Expire_date[0]) + "\n"
+                dias2 = []
+                for i in range(calendar.monthrange(int(ano2), int(meses_dict[mes2]))[1]):
+                    dias2.append(i+1)
+                dia2 = st.selectbox("Selecione o dia maximo", dias2)
 
-                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                data = pd.read_sql(
+                    "SELECT * FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE DATA_TRANSACAO <= '"+str(ano2)+"-"+str(meses_dict[mes2])+"-"+str(dia2)+"' AND  DATA_TRANSACAO >= '"+str(ano)+"-"+str(meses_dict[mes])+"-"+str(dia)+"' ;", con=connection)
+
+            else:
+                data = pd.read_sql(
+                    "SELECT * FROM TABELA_ALMOXARIFADO_TRANSACOES;", con=connection)
+
+            if len(data["ID_PRODUTO"].values) == 0:
+                st.error("Nenhum registro encontrado")
+
+            else:
+                data = pd.read_sql(
+                    "SELECT * FROM TABELA_ALMOXARIFADO_TRANSACOES", con=connection)
+
+                c.execute(
+                    "SELECT * FROM TABELA_ALMOXARIFADO_PRODUTOS ;")
+                AllProducts = c.fetchall()
+                AllProducts_Dictionaty = {}
+                for i in range(len(AllProducts)):
+                    AllProducts_Dictionaty[AllProducts[i][0]] = str(
+                        AllProducts[i][1])
+                # data["ID_PRODUTO"] = data["ID_PRODUTO"].to_string()
+                data["ID_PRODUTO"] = data["ID_PRODUTO"].replace(
+                    AllProducts_Dictionaty)
+                data["DATA_TRANSACAO"] = data["DATA_TRANSACAO"].dt.strftime(
+                    '%d-%m-%Y %H:%M:%S')
+                data["DATA_VENCIMENTO"] = data["DATA_VENCIMENTO"].dt.strftime(
+                    '%d-%m-%Y %H:%M:%S')
+                st.dataframe(data)
+                list_unique = data['ID_PRODUTO'].unique()
+                st.subheader("Total das transações do periodo por item")
+
+                for i in list_unique:
+                    st.subheader(i+":\n"+"\n:red[● **Sairam um total de "+str(abs(data[(data['ID_PRODUTO'] == i) & (data['VALOR'] < 0)]["VALOR"].sum()))+"**]\n"+"\n:green[● **Entraram um total de "+str(data[(data['ID_PRODUTO'] == i) & (data['VALOR'] > 0)]["VALOR"].sum())+"** ]"+"\n"+"\n **Saldo total de " +
+                                 str(data[data['ID_PRODUTO'] == i]["VALOR"].sum())+"**")
+
+                st.divider()
+
+                pdf = FPDF()
+                pdf.add_page()
+                pdf.set_font("Arial", size=12)
+
+                text = "ITENS VENCIDOS:\n"
+                pdf.cell(200, 10, txt=text, ln=1, align="C")
                 pdf.ln(2)
+                for i in range(0, len(list_Name_Expire)):
+                    newText = "\n-- "+str(ExpireListValue[i]) + \
+                        " "+str(list_Name_Expire[i]) + " VENCIDOS EM " + \
+                        str(list_Expire_date[0][8:10]+list_Expire_date[0][4:8] +
+                            list_Expire_date[0][0:4]) + "\n"
 
-            text_soon = "ITENS PRÓXIMOS DO VENCIMENTO:\n"
-            pdf.cell(200, 10, txt=text_soon, ln=1, align="C")
-            pdf.ln(2)
-            for i in range(0, len(list_Name_Soon)):
-                newText = "\n-- " + str(dataSoonValue[i]) + \
-                    " " + str(list_Name_Soon[i]) + " PRÓXIMOS DO VENCIMENTO EM " + \
-                    str(list_Soon_date[i]) + "\n"
-                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                    pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                    pdf.ln(2)
+
+                text_soon = "ITENS PRÓXIMOS DO VENCIMENTO:\n"
+                pdf.cell(200, 10, txt=text_soon, ln=1, align="C")
                 pdf.ln(2)
+                for i in range(0, len(list_Name_Soon)):
+                    newText = "\n-- " + str(dataSoonValue[i]) + \
+                        " " + str(list_Name_Soon[i]) + " PRÓXIMOS DO VENCIMENTO EM " + \
+                        str(list_Soon_date[i][8:10]+list_Soon_date[i]
+                            [4:8]+list_Soon_date[i][0:4]) + "\n"
+                    pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                    pdf.ln(2)
 
-            text_indate = "ITENS DENTRO DO PRAZO:\n"
-            pdf.cell(200, 10, txt=text_indate, ln=1, align="C")
-            pdf.ln(2)
-            for i in range(0, len(list_Name_Indate)):
-                newText = "\n-- " + str(dataIndateValue[i]) + \
-                    " " + str(list_Name_Indate[i]) + " DENTRO DO PRAZO COM VENCIMENTO EM " + \
-                    str(list_Indate_date[i]) + "\n"
-
-                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                text_indate = "ITENS DENTRO DO PRAZO:\n"
+                pdf.cell(200, 10, txt=text_indate, ln=1, align="C")
                 pdf.ln(2)
+                for i in range(0, len(list_Name_Indate)):
+                    newText = "\n-- " + str(dataIndateValue[i]) + \
+                        " " + str(list_Name_Indate[i]) + " DENTRO DO PRAZO COM VENCIMENTO EM " + \
+                        str(list_Indate_date[i][8:10]+list_Indate_date[i]
+                            [4:8]+list_Indate_date[i][0:4]) + "\n"
 
-            pdf.output("example.pdf")
+                    pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                    pdf.ln(2)
 
-            with open("example.pdf", "rb") as f:
-                st.download_button(
-                    label="Fazer dowload do relatorio em PDF",
-                    data=f,
-                    file_name='teste.pdf'
-                )
+                pdf.output("example.pdf")
+
+                with open("example.pdf", "rb") as f:
+                    st.download_button(
+                        label="Fazer dowload do relatorio em PDF",
+                        data=f,
+                        file_name='relatorio.pdf'
+                    )
+
         else:
 
             c.execute(
@@ -637,7 +975,8 @@ elif(st.session_state.Login2 == 2):
             for i in range(0, len(list_Name_Expire)):
                 newText = "\n:red[● **"+str(ExpireListValue[i]) + \
                     " "+str(list_Name_Expire[i]) + " VENCIDOS EM " + \
-                    str(list_Expire_date[0]) + "**]\n"
+                    str(list_Expire_date[0][8:10]+list_Expire_date[0][4:8] +
+                        list_Expire_date[0][0:4]) + "**]\n"
 
                 text = text + newText
 
@@ -665,7 +1004,8 @@ elif(st.session_state.Login2 == 2):
             for i in range(0, len(list_Name_Soon)):
                 newText = "\n:orange[● **" + str(dataSoonValue[i]) + \
                     " " + str(list_Name_Soon[i]) + " PRÓXIMOS DO VENCIMENTO EM " + \
-                    str(list_Soon_date[i]) + "**]\n"
+                    str(list_Soon_date[i][8:10]+list_Soon_date[i]
+                        [4:8]+list_Soon_date[i][0:4]) + "**]\n"
 
                 text_soon = text_soon + newText
 
@@ -693,73 +1033,147 @@ elif(st.session_state.Login2 == 2):
             for i in range(0, len(list_Name_Indate)):
                 newText = "\n:green[● **" + str(dataIndateValue[i]) + \
                     " " + str(list_Name_Indate[i]) + " DENTRO DO PRAZO EM " + \
-                    str(list_Indate_date[i]) + "**]\n"
+                    str(list_Indate_date[i][8:10]+list_Indate_date[i]
+                        [4:8]+list_Indate_date[i][0:4]) + "**]\n"
 
                 text_indate = text_indate + newText
 
             st.subheader(text_indate)
             st.divider()
             st.subheader("Lista de transações")
-            data = pd.read_sql(
-                "SELECT * FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = '" + str(list_tables_ID[0])+"';", con=connection)
+            filtro = st.radio("Filtro", ["Data", "Nenhum"])
+            if filtro == "Data":
+                mes = st.selectbox("Selecione o mês minimo", [
+                    "JANEIRO",
+                    "FEVEREIRO",
+                    "MARÇO",
+                    "ABRIL",
+                    "MAIO",
+                    "JUNHO",
+                    "JULHO",
+                    "AGOSTO",
+                    "SETEMBRO",
+                    "OUTUBRO",
+                    "NOVEMBRO",
+                    "DEZEMBRO"])
+                anos = []
+                anos.append(dt.date.today().year)
+                if dt.date.today().year > 2023:
+                    num_anos = dt.date.today().year - 2023
+                    for i in range(num_anos):
+                        days = float(365*(i+1))
+                        previous_year = dt.date.today() - timedelta(days=float(days))
+                        anos.append(previous_year.year)
 
-            c.execute(
-                "SELECT * FROM TABELA_ALMOXARIFADO_PRODUTOS ;")
-            AllProducts = c.fetchall()
-            AllProducts_Dictionaty = {}
-            for i in range(len(AllProducts)):
-                AllProducts_Dictionaty[AllProducts[i][0]] = str(
-                    AllProducts[i][1])
-            # data["ID_PRODUTO"] = data["ID_PRODUTO"].to_string()
-            data["ID_PRODUTO"] = data["ID_PRODUTO"].replace(
-                AllProducts_Dictionaty)
-            st.dataframe(data)
-            st.divider()
+                ano = st.selectbox("Selecione o ano minimo", anos)
+                dias = []
+                for i in range(calendar.monthrange(int(ano), int(meses_dict[mes]))[1]):
+                    dias.append(i+1)
+                dia = st.selectbox("Selecione o dia minimo", dias)
 
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
+                mes2 = st.selectbox("Selecione o mês maximo", [
+                    "JANEIRO",
+                    "FEVEREIRO",
+                    "MARÇO",
+                    "ABRIL",
+                    "MAIO",
+                    "JUNHO",
+                    "JULHO",
+                    "AGOSTO",
+                    "SETEMBRO",
+                    "OUTUBRO",
+                    "NOVEMBRO",
+                    "DEZEMBRO"])
+                ano2 = st.selectbox("Selecione o ano maximo", anos)
 
-            text = "ITENS VENCIDOS:\n"
-            pdf.cell(200, 10, txt=text, ln=1, align="C")
-            pdf.ln(2)
-            for i in range(0, len(list_Name_Expire)):
-                newText = "\n-- "+str(ExpireListValue[i]) + \
-                    " "+str(list_Name_Expire[i]) + " VENCIDOS EM " + \
-                    str(list_Expire_date[0]) + "\n"
+                dias2 = []
+                for i in range(calendar.monthrange(int(ano2), int(meses_dict[mes2]))[1]):
+                    dias2.append(i+1)
+                dia2 = st.selectbox("Selecione o dia maximo", dias2)
 
-                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                data = pd.read_sql(
+                    "SELECT * FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = '" + str(list_tables_ID[0])+"' AND  DATA_TRANSACAO <= '"+str(ano2)+"-"+str(meses_dict[mes2])+"-"+str(dia2)+"' AND  DATA_TRANSACAO >= '"+str(ano)+"-"+str(meses_dict[mes])+"-"+str(dia)+"' ;", con=connection)
+
+            else:
+                data = pd.read_sql(
+                    "SELECT * FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = '" + str(list_tables_ID[0])+"';", con=connection)
+
+            if len(data["ID_PRODUTO"].values) == 0:
+                st.error("Nenhum registro encontrado")
+
+            else:
+                c.execute(
+                    "SELECT * FROM TABELA_ALMOXARIFADO_PRODUTOS ;")
+                AllProducts = c.fetchall()
+                AllProducts_Dictionaty = {}
+                for i in range(len(AllProducts)):
+                    AllProducts_Dictionaty[AllProducts[i][0]] = str(
+                        AllProducts[i][1])
+                # data["ID_PRODUTO"] = data["ID_PRODUTO"].to_string()
+                data["ID_PRODUTO"] = data["ID_PRODUTO"].replace(
+                    AllProducts_Dictionaty)
+                data["DATA_TRANSACAO"] = data["DATA_TRANSACAO"].dt.strftime(
+                    '%d-%m-%Y %H:%M:%S')
+                data["DATA_VENCIMENTO"] = data["DATA_VENCIMENTO"].dt.strftime(
+                    '%d-%m-%Y %H:%M:%S')
+
+                st.dataframe(data)
+                list_unique = data['ID_PRODUTO'].unique()
+                st.subheader("Total das transações do periodo por item")
+
+                for i in list_unique:
+                    st.subheader(i+":\n"+"\n:red[● **Sairam um total de "+str(abs(data[(data['ID_PRODUTO'] == i) & (data['VALOR'] < 0)]["VALOR"].sum()))+"**]\n"+"\n:green[● **Entraram um total de "+str(data[(data['ID_PRODUTO'] == i) & (data['VALOR'] > 0)]["VALOR"].sum())+"** ]"+"\n"+"\n **Saldo total de " +
+                                 str(data[data['ID_PRODUTO'] == i]["VALOR"].sum())+"**")
+
+                st.divider()
+
+                pdf = FPDF()
+                pdf.add_page()
+                pdf.set_font("Arial", size=12)
+
+                text = "ITENS VENCIDOS:\n"
+                pdf.cell(200, 10, txt=text, ln=1, align="C")
                 pdf.ln(2)
+                for i in range(0, len(list_Name_Expire)):
+                    newText = "\n-- "+str(ExpireListValue[i]) + \
+                        " "+str(list_Name_Expire[i]) + " VENCIDOS EM " + \
+                        str(list_Expire_date[0][8:10]+list_Expire_date[0][4:8] +
+                            list_Expire_date[0][0:4]) + "\n"
 
-            text_soon = "ITENS PRÓXIMOS DO VENCIMENTO:\n"
-            pdf.cell(200, 10, txt=text_soon, ln=1, align="C")
-            pdf.ln(2)
-            for i in range(0, len(list_Name_Soon)):
-                newText = "\n-- " + str(dataSoonValue[i]) + \
-                    " " + str(list_Name_Soon[i]) + " PRÓXIMOS DO VENCIMENTO EM " + \
-                    str(list_Soon_date[i]) + "\n"
-                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                    pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                    pdf.ln(2)
+
+                text_soon = "ITENS PRÓXIMOS DO VENCIMENTO:\n"
+                pdf.cell(200, 10, txt=text_soon, ln=1, align="C")
                 pdf.ln(2)
+                for i in range(0, len(list_Name_Soon)):
+                    newText = "\n-- " + str(dataSoonValue[i]) + \
+                        " " + str(list_Name_Soon[i]) + " PRÓXIMOS DO VENCIMENTO EM " + \
+                        str(list_Soon_date[i][8:10]+list_Soon_date[i]
+                            [4:8]+list_Soon_date[i][0:4]) + "\n"
+                    pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                    pdf.ln(2)
 
-            text_indate = "ITENS DENTRO DO PRAZO:\n"
-            pdf.cell(200, 10, txt=text_indate, ln=1, align="C")
-            pdf.ln(2)
-            for i in range(0, len(list_Name_Indate)):
-                newText = "\n-- " + str(dataIndateValue[i]) + \
-                    " " + str(list_Name_Indate[i]) + " DENTRO DO PRAZO COM VENCIMENTO EM " + \
-                    str(list_Indate_date[i]) + "\n"
-
-                pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                text_indate = "ITENS DENTRO DO PRAZO:\n"
+                pdf.cell(200, 10, txt=text_indate, ln=1, align="C")
                 pdf.ln(2)
+                for i in range(0, len(list_Name_Indate)):
+                    newText = "\n-- " + str(dataIndateValue[i]) + \
+                        " " + str(list_Name_Indate[i]) + " DENTRO DO PRAZO COM VENCIMENTO EM " + \
+                        str(list_Indate_date[i][8:10]+list_Indate_date[i]
+                            [4:8]+list_Indate_date[i][0:4]) + "\n"
 
-            pdf.output("example.pdf")
+                    pdf.cell(200, 10, txt=newText, ln=1, align="C")
+                    pdf.ln(2)
 
-            with open("example.pdf", "rb") as f:
-                st.download_button(
-                    label="Fazer dowload do relatorio em PDF",
-                    data=f,
-                    file_name='teste.pdf'
-                )
+                pdf.output("example.pdf")
+
+                with open("example.pdf", "rb") as f:
+                    st.download_button(
+                        label="Fazer dowload do relatorio em PDF",
+                        data=f,
+                        file_name='relatorio.pdf'
+                    )
 
     if selected == "Adicionar e remover produtos":
         logout = st.button("Logout")
@@ -790,7 +1204,7 @@ elif(st.session_state.Login2 == 2):
                 c.execute(
                     "DELETE FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = '" + model+"';")
                 connection.commit()
-                st.write("Removido com sucesso")
+                st.write(":green[Removido com sucesso!]")
 
         if st.session_state.new_form_menu_products == 3:
             menu = st.button("Retornar menu")
@@ -800,18 +1214,18 @@ elif(st.session_state.Login2 == 2):
             st.title("Adicionar produto")
 
             name = st.text_input("Digite o nome do item")
-            result = NotSymbols(name)
+
             desc = st.selectbox("Selecione a descrição do item", [
                                 'UNIDADE', 'LITRO', 'FRASCO', 'AMPOLA', 'COMPRIMIDO', 'XAROPE', 'CAIXA', 'GOTAS', 'PACOTE', 'QUILO', 'PAR'])
             val = st.number_input("Digite o codigo do item", step=1)
-            if(result == True):
-                Add = st.button("Adicionar")
-                if Add:
-                    c.execute("INSERT INTO TABELA_ALMOXARIFADO_PRODUTOS( MODELO_NOME,DESCRICAO,COD_ARQ_LIFE) VALUES ('" +
-                              name+"','"+desc+"','" + str(val)+"');")
-                    connection.commit()
 
-                    st.write("Adicionado com sucesso")
+            Add = st.button("Adicionar")
+            if Add:
+                c.execute("INSERT INTO TABELA_ALMOXARIFADO_PRODUTOS( MODELO_NOME,DESCRICAO,COD_ARQ_LIFE) VALUES ('" +
+                          name+"','"+desc+"','" + str(val)+"');")
+                connection.commit()
+
+                st.write(":green[Adicionado com sucesso!]")
 
         if st.session_state.new_form_menu_products == 0:
             st.title("Remover ou adicionar produtos")
@@ -826,6 +1240,6 @@ elif(st.session_state.Login2 == 2):
 
 
 elif st.session_state.Login2 == 3:
-    st.error('Senha ou Usuário esta incorreto')
+    st.error('Senha ou Usuario esta incorreto')
 elif st.session_state.Login2 == 0:
-    st.warning('Insira respectivamente o usuário e a senha como solicitado')
+    st.warning('Insira respectivamente o usuario e a senha como solicitado')
