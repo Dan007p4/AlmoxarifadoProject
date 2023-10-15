@@ -65,14 +65,14 @@ if((cookie_manager.get(cookie=cookie)) == "1"):
 if((cookie_manager.get(cookie=cookie)) == "2"):
     st.session_state.Login2 = 2
 
-# hide_st_style = """
-#             <style>
-#             #MainMenu {visibility: hidden;}
-#             footer {visibility: hidden;}
-#             header {visibility: hidden;}
-#             </style>
-#             """
-# st.markdown(hide_st_style, unsafe_allow_html=True)
+hide_st_style = """
+             <style>
+             #MainMenu {visibility: hidden;}
+             footer {visibility: hidden;}
+             header {visibility: hidden;}
+             </style>
+             """
+st.markdown(hide_st_style, unsafe_allow_html=True)
 
 if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
     cookie = "ActualUser"
