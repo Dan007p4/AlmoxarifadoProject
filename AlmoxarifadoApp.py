@@ -65,6 +65,14 @@ if((cookie_manager.get(cookie=cookie)) == "1"):
 if((cookie_manager.get(cookie=cookie)) == "2"):
     st.session_state.Login2 = 2
 
+# hide_st_style = """
+#             <style>
+#             #MainMenu {visibility: hidden;}
+#             footer {visibility: hidden;}
+#             header {visibility: hidden;}
+#             </style>
+#             """
+# st.markdown(hide_st_style, unsafe_allow_html=True)
 
 if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
     cookie = "ActualUser"
@@ -128,7 +136,7 @@ def NotSymbols(string):
 
 
 def NotSymbolsDate(string):
-    caracteres_permitidos = ["0123456789-"]
+    caracteres_permitidos = ["0123456789/"]
     for caractere in string:
         if caractere not in caracteres_permitidos[0]:
             st.error("Simbolos não permitidos identificados no campo de data")
@@ -146,7 +154,7 @@ def LogOut():
 
 
 def verificar_formato_data(data_string):
-    caracteres_permitidos = ["0123456789-"]
+    caracteres_permitidos = ["0123456789/"]
     for caractere in data_string:
         if caractere not in caracteres_permitidos[0]:
             return False
@@ -178,7 +186,7 @@ if(st.session_state.Login2 == 1):
             menu_icon="border-width"
         )
     st.sidebar.image(
-        "WhatsApp_Image_2023-02-21_at_14.22.25-removebg-preview.jpg", use_column_width=True)
+        "icon-Centro.jpeg", use_column_width=True)
 
     if selected == "Registros do almoxarifado":
         logout = st.button("Logout")
@@ -212,26 +220,78 @@ if(st.session_state.Login2 == 1):
                 value = i[0]
                 list_tables.append(value)
 
-            model = st.selectbox("Selecione o modelo do pedido",
+            model = st.selectbox("Selecione o material do pedido",
                                  list_tables)
+            c.execute(
+                "SELECT DESCRICAO FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='" + model+"';")
 
+            list_tables = []
+            tablesModelName = c.fetchall()
+            for i in tablesModelName:
+                value = i[0]
+                list_tables.append(value)
+
+            st.subheader(str(list_tables[0]))
+
+            c.execute(
+                "SELECT ESTOQUE_AUTORIZADO FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='" + model+"';")
+
+            list_limits = []
+            tablesLimit = c.fetchall()
+            for i in tablesLimit:
+                value = i[0]
+                list_limits.append(value)
+            st.subheader("Estoque autorizado de: " + str(list_limits[0]))
+
+            c.execute(
+                "SELECT ID_ITEM FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = '" + model+"';")
+            list_ID = []
+            tablesID = c.fetchall()
+            for i in tablesID:
+                value = i[0]
+                list_ID.append(value)
+
+            c.execute(
+                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO ='" + str(list_ID[0])+"';")
+
+            list_saldo = []
+            saldoPedidos = c.fetchall()
+            for i in saldoPedidos:
+                value = i[0]
+                list_saldo.append(value)
+
+            maior_que_o_limite = False
+            if len(list_saldo) > 1:
+                st.subheader("Estoque atual de: " + str(list_saldo[0]))
+
+            else:
+                st.error("Nenhum valor no estoque atual")
             val = st.number_input("Digite o valor que vai entrar",
                                   max_value=50000, min_value=1, value=1, step=1)
 
+            if len(list_saldo) > 1:
+                if (val + list_saldo[0]) > list_limits[0]:
+                    st.error(
+                        "Este valor somado ao estoque atual é maior que o estoque autorizado")
+            else:
+                maior_que_o_limite = True
+
             dtRecive = st.text_input(
-                "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20-05-2023", max_chars=10)
+                "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtRecive)
             dtRecive = dtRecive[6:11]+dtRecive[2:7]+dtRecive[0:1]
+            dtRecive = dtRecive.replace("/", "-")
 
             dtExpire = st.text_input(
-                "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20-05-2023", max_chars=10)
+                "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtExpire)
             dtExpire = dtExpire[6:11]+dtExpire[2:7]+dtExpire[0:1]
+            dtExpire = dtExpire.replace("/", "-")
 
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
                 st.warning("Data de recebimento ou de vencimento incorreta")
 
-            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)):
+            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)) & (maior_que_o_limite == True):
                 send = st.button("Enviar")
                 if send:
                     c.execute(
@@ -318,7 +378,7 @@ if(st.session_state.Login2 == 1):
                 value = i[0]
                 list_tables.append(value)
 
-            model = st.selectbox("Selecione o modelo do pedido",
+            model = st.selectbox("Selecione o material do pedido",
                                  list_tables)
             # st.text(
             #     "SELECT ITEM_ID FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='"+model + "';")
@@ -344,69 +404,70 @@ if(st.session_state.Login2 == 1):
 
             dtExpire = st.selectbox(
                 "Selecione a data de vencimento", list_Expire)
+            if (dtExpire != None):
+                c.execute(
+                    "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+                list_val = []
+                tablesValue = c.fetchall()
+                for i in tablesValue:
+                    value = i[0]
+                    list_val.append(value)
 
-            c.execute(
-                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
-            list_val = []
-            tablesValue = c.fetchall()
-            for i in tablesValue:
-                value = i[0]
-                list_val.append(value)
+                val = st.number_input("Digite o valor a ser debitado",
+                                      max_value=5000, min_value=1, value=1, step=1)
 
-            val = st.number_input("Digite o valor a ser debitado",
-                                  max_value=5000, min_value=1, value=1, step=1)
+                if(val > list_val[0]):
+                    st.error(
+                        "Valor a ser debitado é maior que todo o estoque existente do produto")
 
-            if(val > list_val[0]):
-                st.error(
-                    "Valor a ser debitado é maior que todo o estoque existente do produto")
+                if((val > 0) & (val != None) & (val < list_val[0])):
 
-            if((val > 0) & (val != None) & (val < list_val[0])):
-
-                send = st.button("Enviar")
-                if send:
-                    # st.text(
-                    #     "SELECT VALOR FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = " + model+";")
-                    c.execute(
-                        "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
-                    list_val = []
-                    tablesValue = c.fetchall()
-                    for i in tablesValue:
-                        value = i[0]
-                        list_val.append(value)
-
-                    c.execute(
-                        "SELECT DATA_VENCIMENTO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = '" + str(list_ID[0])+"';")
-                    list_Expire = []
-                    tablesExpire = c.fetchall()
-                    for i in tablesExpire:
-                        value = i[0].date()
-                        list_Expire.append(value)
-
-                    c.execute(
-                        "SELECT DATA_TRANSACAO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO= '" + str(list_ID[0])+"';")
-                    list_Recive = []
-                    tablesRecive = c.fetchall()
-                    for i in tablesRecive:
-                        value = i[0].date()
-                        list_Recive.append(value)
-
-                    c.execute("INSERT INTO TABELA_ALMOXARIFADO_TRANSACOES( DATA_TRANSACAO, DATA_VENCIMENTO,VALOR,ID_PRODUTO) VALUES (STR_TO_DATE('" +
-                              str(list_Recive[0])+"','%Y-%m-%d'),STR_TO_DATE('"+str(dtExpire)+"','%Y-%m-%d'),'"+str(-val)+"','" + str(list_ID[0])+"');")
-
-                    c.execute("UPDATE TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS SET SALDO_PEDIDO = " +
-                              str(list_val[0] - val) + " WHERE  ID_PRODUTO_PEDIDO = '" + str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
-
-                    connection.commit()
-
-                    c.execute(
-                        "SELECT VENCIMENTO_PEDIDO,ID_PRODUTO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE SALDO_PEDIDO = '" + str(0)+"';")
-                    tables0 = c.fetchall()
-                    for i in tables0:
+                    send = st.button("Enviar")
+                    if send:
+                        # st.text(
+                        #     "SELECT VALOR FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = " + model+";")
                         c.execute(
-                            "DELETE FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE VENCIMENTO_PEDIDO = '" + str(tables0[0])+"' AND ID_PRODUTO_PEDIDO ='"+str(tables0[1]) + "';")
-                        connection.commit()
-                    st.write("Baixa concluída")
+                            "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+                        list_val = []
+                        tablesValue = c.fetchall()
+                        for i in tablesValue:
+                            value = i[0]
+                            list_val.append(value)
 
+                        c.execute(
+                            "SELECT DATA_VENCIMENTO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = '" + str(list_ID[0])+"';")
+                        list_Expire = []
+                        tablesExpire = c.fetchall()
+                        for i in tablesExpire:
+                            value = i[0].date()
+                            list_Expire.append(value)
+
+                        c.execute(
+                            "SELECT DATA_TRANSACAO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO= '" + str(list_ID[0])+"';")
+                        list_Recive = []
+                        tablesRecive = c.fetchall()
+                        for i in tablesRecive:
+                            value = i[0].date()
+                            list_Recive.append(value)
+
+                        c.execute("INSERT INTO TABELA_ALMOXARIFADO_TRANSACOES( DATA_TRANSACAO, DATA_VENCIMENTO,VALOR,ID_PRODUTO) VALUES (STR_TO_DATE('" +
+                                  str(list_Recive[0])+"','%Y-%m-%d'),STR_TO_DATE('"+str(dtExpire)+"','%Y-%m-%d'),'"+str(-val)+"','" + str(list_ID[0])+"');")
+
+                        c.execute("UPDATE TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS SET SALDO_PEDIDO = " +
+                                  str(list_val[0] - val) + " WHERE  ID_PRODUTO_PEDIDO = '" + str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+
+                        connection.commit()
+
+                        c.execute(
+                            "SELECT VENCIMENTO_PEDIDO,ID_PRODUTO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE SALDO_PEDIDO = '" + str(0)+"';")
+                        tables0 = c.fetchall()
+                        for i in tables0:
+                            c.execute(
+                                "DELETE FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE VENCIMENTO_PEDIDO = '" + str(tables0[0])+"' AND ID_PRODUTO_PEDIDO ='"+str(tables0[1]) + "';")
+                            connection.commit()
+                        st.write("Baixa concluída")
+            else:
+                st.error("Nenhum valor em estoque encontrado para este produto")
         else:
             lanca = st.button("Lançar no almoxarifado")
             baixa = st.button("Dar baixa no almoxarifado")
@@ -428,7 +489,7 @@ elif(st.session_state.Login2 == 2):
             menu_icon="border-width"
         )
     st.sidebar.image(
-        "WhatsApp_Image_2023-02-21_at_14.22.25-removebg-preview.jpg", use_column_width=True)
+        "icon-Centro.jpeg", use_column_width=True)
 
     if selected == "Registros do almoxarifado":
         logout = st.button("Logout")
@@ -462,26 +523,78 @@ elif(st.session_state.Login2 == 2):
                 value = i[0]
                 list_tables.append(value)
 
-            model = st.selectbox("Selecione o modelo do pedido",
+            model = st.selectbox("Selecione o material do pedido",
                                  list_tables)
+            c.execute(
+                "SELECT DESCRICAO FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='" + model+"';")
 
+            list_tables = []
+            tablesModelName = c.fetchall()
+            for i in tablesModelName:
+                value = i[0]
+                list_tables.append(value)
+
+            st.subheader(str(list_tables[0]))
+
+            c.execute(
+                "SELECT ESTOQUE_AUTORIZADO FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='" + model+"';")
+
+            list_limits = []
+            tablesLimit = c.fetchall()
+            for i in tablesLimit:
+                value = i[0]
+                list_limits.append(value)
+            st.subheader("Estoque autorizado de: " + str(list_limits[0]))
+
+            c.execute(
+                "SELECT ID_ITEM FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = '" + model+"';")
+            list_ID = []
+            tablesID = c.fetchall()
+            for i in tablesID:
+                value = i[0]
+                list_ID.append(value)
+
+            c.execute(
+                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO ='" + str(list_ID[0])+"';")
+
+            list_saldo = []
+            saldoPedidos = c.fetchall()
+            for i in saldoPedidos:
+                value = i[0]
+                list_saldo.append(value)
+
+            maior_que_o_limite = False
+            if len(list_saldo) > 1:
+                st.subheader("Estoque atual de: " + str(list_saldo[0]))
+
+            else:
+                st.error("Nenhum valor no estoque atual")
             val = st.number_input("Digite o valor que vai entrar",
                                   max_value=50000, min_value=1, value=1, step=1)
 
+            if len(list_saldo) > 1:
+                if (val + list_saldo[0]) > list_limits[0]:
+                    st.error(
+                        "Este valor somado ao estoque atual é maior que o estoque autorizado")
+            else:
+                maior_que_o_limite = True
+
             dtRecive = st.text_input(
-                "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20-05-2023", max_chars=10)
+                "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtRecive)
             dtRecive = dtRecive[6:11]+dtRecive[2:7]+dtRecive[0:1]
+            dtRecive = dtRecive.replace("/", "-")
 
             dtExpire = st.text_input(
-                "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20-05-2023", max_chars=10)
+                "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtExpire)
             dtExpire = dtExpire[6:11]+dtExpire[2:7]+dtExpire[0:1]
+            dtExpire = dtExpire.replace("/", "-")
 
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
                 st.warning("Data de recebimento ou de vencimento incorreta")
 
-            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)):
+            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)) & (maior_que_o_limite == True):
                 send = st.button("Enviar")
                 if send:
                     c.execute(
@@ -568,7 +681,7 @@ elif(st.session_state.Login2 == 2):
                 value = i[0]
                 list_tables.append(value)
 
-            model = st.selectbox("Selecione o modelo do pedido",
+            model = st.selectbox("Selecione o material do pedido",
                                  list_tables)
             # st.text(
             #     "SELECT ITEM_ID FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='"+model + "';")
@@ -594,68 +707,70 @@ elif(st.session_state.Login2 == 2):
 
             dtExpire = st.selectbox(
                 "Selecione a data de vencimento", list_Expire)
+            if (dtExpire != None):
+                c.execute(
+                    "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+                list_val = []
+                tablesValue = c.fetchall()
+                for i in tablesValue:
+                    value = i[0]
+                    list_val.append(value)
 
-            c.execute(
-                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
-            list_val = []
-            tablesValue = c.fetchall()
-            for i in tablesValue:
-                value = i[0]
-                list_val.append(value)
+                val = st.number_input("Digite o valor a ser debitado",
+                                      max_value=5000, min_value=1, value=1, step=1)
 
-            val = st.number_input("Digite o valor a ser debitado",
-                                  max_value=5000, min_value=1, value=1, step=1)
+                if(val > list_val[0]):
+                    st.error(
+                        "Valor a ser debitado é maior que todo o estoque existente do produto")
 
-            if(val > list_val[0]):
-                st.error(
-                    "Valor a ser debitado é maior que todo o estoque existente do produto")
+                if((val > 0) & (val != None) & (val < list_val[0])):
 
-            if((val > 0) & (val != None) & (val < list_val[0])):
-
-                send = st.button("Enviar")
-                if send:
-                    # st.text(
-                    #     "SELECT VALOR FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = " + model+";")
-                    c.execute(
-                        "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
-                    list_val = []
-                    tablesValue = c.fetchall()
-                    for i in tablesValue:
-                        value = i[0]
-                        list_val.append(value)
-
-                    c.execute(
-                        "SELECT DATA_VENCIMENTO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = '" + str(list_ID[0])+"';")
-                    list_Expire = []
-                    tablesExpire = c.fetchall()
-                    for i in tablesExpire:
-                        value = i[0].date()
-                        list_Expire.append(value)
-
-                    c.execute(
-                        "SELECT DATA_TRANSACAO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO= '" + str(list_ID[0])+"';")
-                    list_Recive = []
-                    tablesRecive = c.fetchall()
-                    for i in tablesRecive:
-                        value = i[0].date()
-                        list_Recive.append(value)
-
-                    c.execute("INSERT INTO TABELA_ALMOXARIFADO_TRANSACOES( DATA_TRANSACAO, DATA_VENCIMENTO,VALOR,ID_PRODUTO) VALUES (STR_TO_DATE('" +
-                              str(list_Recive[0])+"','%Y-%m-%d'),STR_TO_DATE('"+str(dtExpire)+"','%Y-%m-%d'),'"+str(-val)+"','" + str(list_ID[0])+"');")
-
-                    c.execute("UPDATE TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS SET SALDO_PEDIDO = " +
-                              str(list_val[0] - val) + " WHERE  ID_PRODUTO_PEDIDO = '" + str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
-
-                    connection.commit()
-
-                    c.execute(
-                        "SELECT VENCIMENTO_PEDIDO,ID_PRODUTO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE SALDO_PEDIDO = '" + str(0)+"';")
-                    tables0 = c.fetchall()
-                    for i in tables0:
+                    send = st.button("Enviar")
+                    if send:
+                        # st.text(
+                        #     "SELECT VALOR FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = " + model+";")
                         c.execute(
-                            "DELETE FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE VENCIMENTO_PEDIDO = '" + str(tables0[0])+"' AND ID_PRODUTO_PEDIDO ='"+str(tables0[1]) + "';")
+                            "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+                        list_val = []
+                        tablesValue = c.fetchall()
+                        for i in tablesValue:
+                            value = i[0]
+                            list_val.append(value)
+
+                        c.execute(
+                            "SELECT DATA_VENCIMENTO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO = '" + str(list_ID[0])+"';")
+                        list_Expire = []
+                        tablesExpire = c.fetchall()
+                        for i in tablesExpire:
+                            value = i[0].date()
+                            list_Expire.append(value)
+
+                        c.execute(
+                            "SELECT DATA_TRANSACAO FROM TABELA_ALMOXARIFADO_TRANSACOES WHERE ID_PRODUTO= '" + str(list_ID[0])+"';")
+                        list_Recive = []
+                        tablesRecive = c.fetchall()
+                        for i in tablesRecive:
+                            value = i[0].date()
+                            list_Recive.append(value)
+
+                        c.execute("INSERT INTO TABELA_ALMOXARIFADO_TRANSACOES( DATA_TRANSACAO, DATA_VENCIMENTO,VALOR,ID_PRODUTO) VALUES (STR_TO_DATE('" +
+                                  str(list_Recive[0])+"','%Y-%m-%d'),STR_TO_DATE('"+str(dtExpire)+"','%Y-%m-%d'),'"+str(-val)+"','" + str(list_ID[0])+"');")
+
+                        c.execute("UPDATE TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS SET SALDO_PEDIDO = " +
+                                  str(list_val[0] - val) + " WHERE  ID_PRODUTO_PEDIDO = '" + str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
+
                         connection.commit()
-                    st.write("Baixa concluída")
+
+                        c.execute(
+                            "SELECT VENCIMENTO_PEDIDO,ID_PRODUTO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE SALDO_PEDIDO = '" + str(0)+"';")
+                        tables0 = c.fetchall()
+                        for i in tables0:
+                            c.execute(
+                                "DELETE FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE VENCIMENTO_PEDIDO = '" + str(tables0[0])+"' AND ID_PRODUTO_PEDIDO ='"+str(tables0[1]) + "';")
+                            connection.commit()
+                        st.write("Baixa concluída")
+            else:
+                st.error("Nenhum valor em estoque encontrado para este produto")
 
         else:
             lanca = st.button("Lançar no almoxarifado")
@@ -1181,6 +1296,15 @@ elif(st.session_state.Login2 == 2):
             LogOut()
         st.divider()
 
+        if st.session_state.new_form_menu_products == 4:
+            menu = st.button("Retornar menu")
+            if menu:
+                st.session_state.new_form_menu_products = 0
+                st.experimental_rerun()
+            st.title("Adicionar descrição")
+            desc = st.text_input("Insira o nome da descrição")
+            st.button("Salvar descrição")
+
         if st.session_state.new_form_menu_products == 2:
             menu = st.button("Retornar menu")
             if menu:
@@ -1197,7 +1321,7 @@ elif(st.session_state.Login2 == 2):
                 value = i[0]
                 list_tables.append(value)
 
-            model = st.selectbox("Selecione o modelo do pedido",
+            model = st.selectbox("Selecione o material do pedido",
                                  list_tables)
             delete = st.button("Deletar")
             if delete:
@@ -1231,11 +1355,15 @@ elif(st.session_state.Login2 == 2):
             st.title("Remover ou adicionar produtos")
             remove = st.button("Remover produto")
             add = st.button("Adicionar produto")
+            addDesc = st.button("Adicionar  descrição")
             if remove:
                 st.session_state.new_form_menu_products = 2
                 st.experimental_rerun()
             if add:
                 st.session_state.new_form_menu_products = 3
+                st.experimental_rerun()
+            if addDesc:
+                st.session_state.new_form_menu_products = 4
                 st.experimental_rerun()
 
 
