@@ -261,7 +261,7 @@ if(st.session_state.Login2 == 1):
                 list_saldo.append(value)
 
             maior_que_o_limite = True
-            if len(list_saldo) > 1:
+            if len(list_saldo) >= 1:
                 st.subheader("Estoque atual de: " + str(list_saldo[0]))
 
             else:
@@ -270,7 +270,7 @@ if(st.session_state.Login2 == 1):
             val = st.number_input("Digite o valor que vai entrar",
                                   max_value=50000, min_value=1, value=1, step=1)
 
-            if len(list_saldo) > 1:
+            if len(list_saldo) >= 1:
                 if (val + list_saldo[0]) > list_limits[0]:
                     st.error(
                         "Este valor somado ao estoque atual é maior que o estoque autorizado")
@@ -568,7 +568,7 @@ elif(st.session_state.Login2 == 2):
                 list_saldo.append(value)
 
             maior_que_o_limite = True
-            if len(list_saldo) > 1:
+            if len(list_saldo) >= 1:
                 st.subheader("Estoque atual de: " + str(list_saldo[0]))
 
             else:
@@ -576,7 +576,7 @@ elif(st.session_state.Login2 == 2):
             val = st.number_input("Digite o valor que vai entrar",
                                   max_value=50000, min_value=1, value=1, step=1)
 
-            if len(list_saldo) > 1:
+            if len(list_saldo) >= 1:
                 if (val + list_saldo[0]) > list_limits[0]:
                     st.error(
                         "Este valor somado ao estoque atual é maior que o estoque autorizado")
