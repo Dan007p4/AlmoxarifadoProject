@@ -281,13 +281,13 @@ if(st.session_state.Login2 == 1):
             dtRecive = st.text_input(
                 "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtRecive)
-            dtRecive = dtRecive[6:11]+dtRecive[2:7]+dtRecive[0:1]
+            dtRecive = dtRecive[6:10]+dtRecive[2:6]+dtRecive[0:2]
 
 
             dtExpire = st.text_input(
                 "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtExpire)
-            dtExpire = dtExpire[6:11]+dtExpire[2:7]+dtExpire[0:1]
+            dtExpire = dtExpire[6:10]+dtExpire[2:6]+dtExpire[0:2]
 
 
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
@@ -587,13 +587,13 @@ elif(st.session_state.Login2 == 2):
             dtRecive = st.text_input(
                 "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtRecive)
-            dtRecive = dtRecive[6:11]+dtRecive[2:7]+dtRecive[0:1]
+            dtRecive = dtRecive[6:10]+dtRecive[2:6]+dtRecive[0:2]
             
 
             dtExpire = st.text_input(
                 "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtExpire)
-            dtExpire = dtExpire[6:11]+dtExpire[2:7]+dtExpire[0:1]
+            dtExpire = dtExpire[6:10]+dtExpire[2:6]+dtExpire[0:2]
            
 
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
