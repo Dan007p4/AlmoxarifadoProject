@@ -282,19 +282,21 @@ if(st.session_state.Login2 == 1):
                 "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtRecive)
             dtRecive = dtRecive[6:11]+dtRecive[2:7]+dtRecive[0:1]
-            dtRecive = dtRecive.replace("/", "-")
+
 
             dtExpire = st.text_input(
                 "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtExpire)
             dtExpire = dtExpire[6:11]+dtExpire[2:7]+dtExpire[0:1]
-            dtExpire = dtExpire.replace("/", "-")
+
 
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
                 st.warning("Data de recebimento ou de vencimento incorreta")
 
             if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)) & (maior_que_o_limite == True):
                 send = st.button("Enviar")
+                dtExpire = dtExpire.replace("/", "-")
+                dtRecive = dtRecive.replace("/", "-")
                 if send:
                     c.execute(
                         "SELECT ID_ITEM FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = '" + model+"';")
@@ -586,19 +588,21 @@ elif(st.session_state.Login2 == 2):
                 "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtRecive)
             dtRecive = dtRecive[6:11]+dtRecive[2:7]+dtRecive[0:1]
-            dtRecive = dtRecive.replace("/", "-")
+            
 
             dtExpire = st.text_input(
                 "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtExpire)
             dtExpire = dtExpire[6:11]+dtExpire[2:7]+dtExpire[0:1]
-            dtExpire = dtExpire.replace("/", "-")
+           
 
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
                 st.warning("Data de recebimento ou de vencimento incorreta")
 
             if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)) & (maior_que_o_limite == True):
                 send = st.button("Enviar")
+                dtExpire = dtExpire.replace("/", "-")
+                dtRecive = dtRecive.replace("/", "-")
                 if send:
                     c.execute(
                         "SELECT ID_ITEM FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = '" + model+"';")
