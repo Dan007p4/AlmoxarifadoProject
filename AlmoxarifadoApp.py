@@ -182,13 +182,13 @@ if(st.session_state.Login2 == 1):
 
         selected = option_menu(
             menu_title="Menu",
-            options=["Registros do almoxarifado"],
+            options=["Adicionar  ou remover itens ao registro do almoxarifado"],
             menu_icon="border-width"
         )
     st.sidebar.image(
         "icon-Centro.jpeg", use_column_width=True)
 
-    if selected == "Registros do almoxarifado":
+    if selected == "Adicionar  ou remover itens ao registro do almoxarifado":
         logout = st.button("Logout")
         st.divider()
         if(logout):
@@ -234,16 +234,6 @@ if(st.session_state.Login2 == 1):
             st.subheader(str(list_tables[0]))
 
             c.execute(
-                "SELECT ESTOQUE_AUTORIZADO FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='" + model+"';")
-
-            list_limits = []
-            tablesLimit = c.fetchall()
-            for i in tablesLimit:
-                value = i[0]
-                list_limits.append(value)
-            st.subheader("Estoque autorizado de: " + str(list_limits[0]))
-
-            c.execute(
                 "SELECT ID_ITEM FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = '" + model+"';")
             list_ID = []
             tablesID = c.fetchall()
@@ -266,34 +256,32 @@ if(st.session_state.Login2 == 1):
 
             else:
                 st.error("Nenhum valor no estoque atual")
-                
+
             val = st.number_input("Digite o valor que vai entrar",
                                   max_value=50000, min_value=1, value=1, step=1)
 
-            if len(list_saldo) >= 1:
-                if (val + list_saldo[0]) > list_limits[0]:
-                    st.error(
-                        "Este valor somado ao estoque atual é maior que o estoque autorizado")
-                    maior_que_o_limite = False
-            else:
-                maior_que_o_limite = True
+            # if len(list_saldo) >= 1:
+            #     if (val + list_saldo[0]) > list_limits[0]:
+            #         st.error(
+            #             "Este valor somado ao estoque atual é maior que o estoque autorizado")
+            #         maior_que_o_limite = False
+            # else:
+            #     maior_que_o_limite = True
 
             dtRecive = st.text_input(
                 "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtRecive)
             dtRecive = dtRecive[6:10]+dtRecive[2:6]+dtRecive[0:2]
 
-
             dtExpire = st.text_input(
                 "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtExpire)
             dtExpire = dtExpire[6:10]+dtExpire[2:6]+dtExpire[0:2]
 
-
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
                 st.warning("Data de recebimento ou de vencimento incorreta")
 
-            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)) & (maior_que_o_limite == True):
+            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)):
                 send = st.button("Enviar")
                 dtExpire = dtExpire.replace("/", "-")
                 dtRecive = dtRecive.replace("/", "-")
@@ -404,10 +392,13 @@ if(st.session_state.Login2 == 1):
             tables_expire = c.fetchall()
             for i in tables_expire:
                 value = i[0].date()
+                value = str(value)
+                value = value[8:10]+value[4:8]+value[0:4]
                 list_Expire.append(value)
 
             dtExpire = st.selectbox(
                 "Selecione a data de vencimento", list_Expire)
+            dtExpire = dtExpire[6:10]+dtExpire[2:6]+dtExpire[0:2]
             if (dtExpire != None):
                 c.execute(
                     "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
@@ -473,8 +464,9 @@ if(st.session_state.Login2 == 1):
             else:
                 st.error("Nenhum valor em estoque encontrado para este produto")
         else:
-            lanca = st.button("Lançar no almoxarifado")
-            baixa = st.button("Dar baixa no almoxarifado")
+            lanca = st.button("Adicionar item ao registro do almoxarifado")
+            baixa = st.button(
+                "Dar baixa em um item registrado no almoxarifado")
             if lanca:
                 st.session_state.new_form_menu = 1
                 st.experimental_rerun()
@@ -489,13 +481,13 @@ elif(st.session_state.Login2 == 2):
         selected = option_menu(
             menu_title="Menu",
             options=["Gerenciar almoxarifado",
-                     "Adicionar e remover produtos", "Registros do almoxarifado"],
+                     "Adicionar e remover produtos", "Adicionar  ou remover itens ao registro do almoxarifado"],
             menu_icon="border-width"
         )
     st.sidebar.image(
         "icon-Centro.jpeg", use_column_width=True)
 
-    if selected == "Registros do almoxarifado":
+    if selected == "Adicionar  ou remover itens ao registro do almoxarifado":
         logout = st.button("Logout")
         st.divider()
         if(logout):
@@ -548,7 +540,6 @@ elif(st.session_state.Login2 == 2):
             for i in tablesLimit:
                 value = i[0]
                 list_limits.append(value)
-            st.subheader("Estoque autorizado de: " + str(list_limits[0]))
 
             c.execute(
                 "SELECT ID_ITEM FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME = '" + model+"';")
@@ -576,30 +567,28 @@ elif(st.session_state.Login2 == 2):
             val = st.number_input("Digite o valor que vai entrar",
                                   max_value=50000, min_value=1, value=1, step=1)
 
-            if len(list_saldo) >= 1:
-                if (val + list_saldo[0]) > list_limits[0]:
-                    st.error(
-                        "Este valor somado ao estoque atual é maior que o estoque autorizado")
-                    maior_que_o_limite = False
-            else:
-                maior_que_o_limite = True
+            # if len(list_saldo) >= 1:
+            #     if (val + list_saldo[0]) > list_limits[0]:
+            #         st.error(
+            #             "Este valor somado ao estoque atual é maior que o estoque autorizado")
+            #         maior_que_o_limite = False
+            # else:
+            #     maior_que_o_limite = True
 
             dtRecive = st.text_input(
                 "Digite a data de recebimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtRecive)
             dtRecive = dtRecive[6:10]+dtRecive[2:6]+dtRecive[0:2]
-            
 
             dtExpire = st.text_input(
                 "Digite a data de vencimento", placeholder="Digite na seguinte formatação : 20/05/2023", max_chars=10)
             NotSymbolsDate(dtExpire)
             dtExpire = dtExpire[6:10]+dtExpire[2:6]+dtExpire[0:2]
-           
 
             if verificar_formato_data(dtExpire) == False or verificar_formato_data(dtRecive) == False:
                 st.warning("Data de recebimento ou de vencimento incorreta")
 
-            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)) & (maior_que_o_limite == True):
+            if((dtRecive != "") & (len(dtRecive) == 10) & (len(dtExpire) == 10) & (dtExpire != "") & (val > 0) & (val != None) & (verificar_formato_data(dtExpire) != False) & (verificar_formato_data(dtRecive) != False)):
                 send = st.button("Enviar")
                 dtExpire = dtExpire.replace("/", "-")
                 dtRecive = dtRecive.replace("/", "-")
@@ -710,10 +699,14 @@ elif(st.session_state.Login2 == 2):
             tables_expire = c.fetchall()
             for i in tables_expire:
                 value = i[0].date()
+                value = str(value)
+                value = value[8:10]+value[4:8]+value[0:4]
                 list_Expire.append(value)
 
             dtExpire = st.selectbox(
                 "Selecione a data de vencimento", list_Expire)
+
+            dtExpire = dtExpire[6:10]+dtExpire[2:6]+dtExpire[0:2]
             if (dtExpire != None):
                 c.execute(
                     "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO = '"+str(list_ID[0])+"' AND VENCIMENTO_PEDIDO ='" + str(dtExpire)+"';")
@@ -780,8 +773,9 @@ elif(st.session_state.Login2 == 2):
                 st.error("Nenhum valor em estoque encontrado para este produto")
 
         else:
-            lanca = st.button("Lançar no almoxarifado")
-            baixa = st.button("Dar baixa no almoxarifado")
+            lanca = st.button("Adicionar item ao registro do almoxarifado")
+            baixa = st.button(
+                "Dar baixa em um item registrado no almoxarifado")
             if lanca:
                 st.session_state.new_form_menu = 1
                 st.experimental_rerun()
@@ -1004,7 +998,16 @@ elif(st.session_state.Login2 == 2):
                 for i in list_unique:
                     st.subheader(i+":\n"+"\n:red[● **Sairam um total de "+str(abs(data[(data['ID_PRODUTO'] == i) & (data['VALOR'] < 0)]["VALOR"].sum()))+"**]\n"+"\n:green[● **Entraram um total de "+str(data[(data['ID_PRODUTO'] == i) & (data['VALOR'] > 0)]["VALOR"].sum())+"** ]"+"\n"+"\n **Saldo total de " +
                                  str(data[data['ID_PRODUTO'] == i]["VALOR"].sum())+"**")
+                    c.execute(
+                        "SELECT ESTOQUE_AUTORIZADO FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='" + i+"';")
 
+                    list_limits = []
+                    tablesLimit = c.fetchall()
+                    for i in tablesLimit:
+                        value = i[0]
+                        list_limits.append(value)
+                    st.subheader("Estoque autorizado de: " +
+                                 str(list_limits[0]))
                 st.divider()
 
                 pdf = FPDF()
@@ -1246,6 +1249,17 @@ elif(st.session_state.Login2 == 2):
                 for i in list_unique:
                     st.subheader(i+":\n"+"\n:red[● **Sairam um total de "+str(abs(data[(data['ID_PRODUTO'] == i) & (data['VALOR'] < 0)]["VALOR"].sum()))+"**]\n"+"\n:green[● **Entraram um total de "+str(data[(data['ID_PRODUTO'] == i) & (data['VALOR'] > 0)]["VALOR"].sum())+"** ]"+"\n"+"\n **Saldo total de " +
                                  str(data[data['ID_PRODUTO'] == i]["VALOR"].sum())+"**")
+                if filtro == "Nenhum":
+                    c.execute(
+                        "SELECT ESTOQUE_AUTORIZADO FROM TABELA_ALMOXARIFADO_PRODUTOS WHERE MODELO_NOME ='" + model+"';")
+
+                    list_limits = []
+                    tablesLimit = c.fetchall()
+                    for i in tablesLimit:
+                        value = i[0]
+                        list_limits.append(value)
+                    st.subheader("Estoque autorizado de: " +
+                                 str(list_limits[0]))
 
                 st.divider()
 
