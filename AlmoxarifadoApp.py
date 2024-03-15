@@ -94,14 +94,14 @@ if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
         if((user == st.secrets["db_user_name"]) & (password == st.secrets["db_user_password"])):
             st.session_state.Login2 = 1
             cookie_manager.set(cookie, "1", expires_at=datetime.datetime(
-                year=2024, month=2, day=2))
+                year=2025, month=2, day=2))
             time.sleep(1000)
             st.experimental_rerun()
 
         elif((user == st.secrets["db_adm_name"]) & (password == st.secrets["db_adm_password"])):
             st.session_state.Login2 = 2
             cookie_manager.set(cookie, "2", expires_at=datetime.datetime(
-                year=2024, month=2, day=2))
+                year=2025, month=2, day=2))
             time.sleep(1000)
             st.experimental_rerun()
 
