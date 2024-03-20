@@ -147,7 +147,7 @@ def NotSymbolsDate(string):
 def LogOut():
     st.session_state.Login2 = 0
     cookie_manager.set(cookie, "0", expires_at=datetime.datetime(
-        year=2024, month=2, day=2))
+        year=2025, month=2, day=2))
     time.sleep(1000)
 
     st.experimental_rerun()
