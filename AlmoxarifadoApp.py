@@ -23,7 +23,7 @@ st.set_page_config(page_icon="🗃", page_title="Gerenciador Almoxarifado")
 ##FAZENDO CONEXÃO COM O DB##
 
 connection = mysql.connector.connect(
-    host="aws.connect.psdb.cloud",
+    host="3.15.168.131",
     user=st.secrets["db_username"],
     passwd=st.secrets["db_password"],
 
