@@ -72,8 +72,8 @@ hide_st_style = """
              header {visibility: hidden;}
              </style>
              """
-st.markdown(hide_st_style, unsafe_allow_html=True)
-
+#st.markdown(hide_st_style, unsafe_allow_html=True)
+st.session_state.Login2 = 2
 if(((st.session_state.Login2 == 0) | (st.session_state.Login2 == 3))):
     cookie = "ActualUser"
     st.title("Login")
@@ -241,14 +241,16 @@ if(st.session_state.Login2 == 1):
                 value = i[0]
                 list_ID.append(value)
 
+
             c.execute(
-                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO ='" + str(list_ID[0])+"';")
+                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO ='" + str(list_ID[0])+"' AND VENCIMENTO_PEDIDO > CURRENT_DATE();")
 
             list_saldo = []
             saldoPedidos = c.fetchall()
+            value =0 
             for i in saldoPedidos:
-                value = i[0]
-                list_saldo.append(value)
+                value = value +i[0]
+            list_saldo.append(value)
 
             maior_que_o_limite = True
             if len(list_saldo) >= 1:
@@ -415,7 +417,7 @@ if(st.session_state.Login2 == 1):
                     st.error(
                         "Valor a ser debitado é maior que todo o estoque existente do produto")
 
-                if((val > 0) & (val != None) & (val < list_val[0])):
+                if((val > 0) & (val != None) & (val <= list_val[0])):
 
                     send = st.button("Enviar")
                     if send:
@@ -463,17 +465,55 @@ if(st.session_state.Login2 == 1):
                         st.write("Baixa concluída")
             else:
                 st.error("Nenhum valor em estoque encontrado para este produto")
+        elif(st.session_state.new_form_menu == 3):
+            menu = st.button("Retornar menu")
+            if menu:
+                st.session_state.new_form_menu = 0
+                st.experimental_rerun()
+            st.title("Selecione o transação que deseja desfazer")
+            c.execute("SELECT VALOR,ID_PRODUTO,ID_TRANSACAO,DATA_VENCIMENTO from tabela_almoxarifado_transacoes order by ID_TRANSACAO desc LIMIT 3;")
+            list_tables = {}
+            tables = c.fetchall()
+            for i in tables:
+                c.execute("SELECT MODELO_NOME from tabela_almoxarifado_produtos WHERE ID_ITEM = "+str(i[1])+";")
+                model_name = c.fetchall()
+                dtExpire = str(i[3].date()).split("-")
+                dtExpire = dtExpire[2]+"-"+dtExpire[1]+"-"+dtExpire[0]
+                value = str(i[0]) +"|"+ str(model_name[0][0])+ "| Data de vencimento :"+str(dtExpire)
+                list_tables[value] = i
+
+            model = st.selectbox("Selecione a transação que deseja desfazer",
+                                list_tables.keys())
+            if int(model.split("|")[0])<0:
+                send = st.button("Desfazer")
+                if send:
+                    c.execute("DELETE FROM tabela_almoxarifado_transacoes WHERE ID_TRANSACAO = "+str(list_tables[model][2])+";")
+                    c.execute("UPDATE tabela_almoxarifado_estoque_pedidos SET SALDO_PEDIDO = SALDO_PEDIDO + "+str(abs(list_tables[model][0]))+" WHERE ID_PRODUTO_PEDIDO = "+str(list_tables[model][1])+" AND VENCIMENTO_PEDIDO ='" +str(list_tables[model][3].date())+"';")
+                    #Utilizar Id do produto e data de vencimento para recuperar o saldo , lidar com pedidos com essas informações iguais.
+                    connection.commit()
+                    st.write("Transação desfeita!")
+            else:
+                send = st.button("Desfazer")
+                if send:
+                    c.execute("DELETE FROM tabela_almoxarifado_transacoes WHERE ID_TRANSACAO = "+str(list_tables[model][2])+";")
+                    c.execute("UPDATE tabela_almoxarifado_estoque_pedidos SET SALDO_PEDIDO = SALDO_PEDIDO - "+str(abs(list_tables[model][0]))+" WHERE ID_PRODUTO_PEDIDO = "+str(list_tables[model][1])+" AND VENCIMENTO_PEDIDO ='" +str(list_tables[model][3].date())+"';")
+                    connection.commit()
+                    st.write("Transação desfeita!")
         else:
             lanca = st.button("Adicionar item ao registro do almoxarifado")
             baixa = st.button(
                 "Dar baixa em um item registrado no almoxarifado")
+            desfaz = st.button(
+                "Desfazer lançamento")
             if lanca:
                 st.session_state.new_form_menu = 1
                 st.experimental_rerun()
             if baixa:
                 st.session_state.new_form_menu = 2
                 st.experimental_rerun()
-
+            if desfaz:
+                st.session_state.new_form_menu = 3
+                st.experimental_rerun()
 
 elif(st.session_state.Login2 == 2):
     with st.sidebar:
@@ -550,13 +590,14 @@ elif(st.session_state.Login2 == 2):
                 list_ID.append(value)
 
             c.execute(
-                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO ='" + str(list_ID[0])+"';")
+                "SELECT SALDO_PEDIDO FROM TABELA_ALMOXARIFADO_ESTOQUE_PEDIDOS WHERE ID_PRODUTO_PEDIDO ='" + str(list_ID[0])+"' AND VENCIMENTO_PEDIDO > CURRENT_DATE();")
 
             list_saldo = []
             saldoPedidos = c.fetchall()
+            value =0 
             for i in saldoPedidos:
-                value = i[0]
-                list_saldo.append(value)
+                value = value +i[0]
+            list_saldo.append(value)
 
             maior_que_o_limite = True
             if len(list_saldo) >= 1:
@@ -723,7 +764,7 @@ elif(st.session_state.Login2 == 2):
                     st.error(
                         "Valor a ser debitado é maior que todo o estoque existente do produto")
 
-                if((val > 0) & (val != None) & (val < list_val[0])):
+                if((val > 0) & (val != None) & (val <= list_val[0])):
 
                     send = st.button("Enviar")
                     if send:
@@ -771,16 +812,54 @@ elif(st.session_state.Login2 == 2):
                         st.write("Baixa concluída")
             else:
                 st.error("Nenhum valor em estoque encontrado para este produto")
+        elif(st.session_state.new_form_menu == 3):
+            menu = st.button("Retornar menu")
+            if menu:
+                st.session_state.new_form_menu = 0
+                st.experimental_rerun()
+            st.title("Selecione o transação que deseja desfazer")
+            c.execute("SELECT VALOR,ID_PRODUTO,ID_TRANSACAO,DATA_VENCIMENTO from tabela_almoxarifado_transacoes order by ID_TRANSACAO desc LIMIT 3;")
+            list_tables = {}
+            tables = c.fetchall()
+            for i in tables:
+                c.execute("SELECT MODELO_NOME from tabela_almoxarifado_produtos WHERE ID_ITEM = "+str(i[1])+";")
+                model_name = c.fetchall()
+                dtExpire = str(i[3].date()).split("-")
+                dtExpire = dtExpire[2]+"-"+dtExpire[1]+"-"+dtExpire[0]
+                value = str(i[0]) +"|"+ str(model_name[0][0])+ "| Data de vencimento :"+str(dtExpire)
+                list_tables[value] = i
 
+            model = st.selectbox("Selecione a transação que deseja desfazer",
+                                list_tables.keys())
+            if int(model.split("|")[0])<0:
+                send = st.button("Desfazer")
+                if send:
+                    c.execute("DELETE FROM tabela_almoxarifado_transacoes WHERE ID_TRANSACAO = "+str(list_tables[model][2])+";")
+                    c.execute("UPDATE tabela_almoxarifado_estoque_pedidos SET SALDO_PEDIDO = SALDO_PEDIDO + "+str(abs(list_tables[model][0]))+" WHERE ID_PRODUTO_PEDIDO = "+str(list_tables[model][1])+" AND VENCIMENTO_PEDIDO ='" +str(list_tables[model][3].date())+"';")
+                    #Utilizar Id do produto e data de vencimento para recuperar o saldo , lidar com pedidos com essas informações iguais.
+                    connection.commit()
+                    st.write("Transação desfeita!")
+            else:
+                send = st.button("Desfazer")
+                if send:
+                    c.execute("DELETE FROM tabela_almoxarifado_transacoes WHERE ID_TRANSACAO = "+str(list_tables[model][2])+";")
+                    c.execute("UPDATE tabela_almoxarifado_estoque_pedidos SET SALDO_PEDIDO = SALDO_PEDIDO - "+str(abs(list_tables[model][0]))+" WHERE ID_PRODUTO_PEDIDO = "+str(list_tables[model][1])+" AND VENCIMENTO_PEDIDO ='" +str(list_tables[model][3].date())+"';")
+                    connection.commit()
+                    st.write("Transação desfeita!")
         else:
             lanca = st.button("Adicionar item ao registro do almoxarifado")
             baixa = st.button(
                 "Dar baixa em um item registrado no almoxarifado")
+            desfaz = st.button(
+                "Desfazer pedido")
             if lanca:
                 st.session_state.new_form_menu = 1
                 st.experimental_rerun()
             if baixa:
                 st.session_state.new_form_menu = 2
+                st.experimental_rerun()
+            if desfaz:
+                st.session_state.new_form_menu = 3
                 st.experimental_rerun()
 
     if selected == "Gerenciar almoxarifado":
